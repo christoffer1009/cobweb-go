@@ -1,4 +1,4 @@
-package ocurrence
+package occurrence
 
 type Occurrence struct {
 	ID      int

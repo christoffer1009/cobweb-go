@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/christoffer1009/cobweb-go/ocurrence"
+	"github.com/christoffer1009/cobweb-go/occurrence"
 )
 
 type Node struct {
 	ID          int
-	Occurrences []*ocurrence.Occurrence
+	Occurrences []*occurrence.Occurrence
 	Children    []*Node
 	P           float64
 	TotalP      float64
@@ -18,7 +18,7 @@ type Node struct {
 func NewNode(ID int) *Node {
 	return &Node{
 		ID:          ID,
-		Occurrences: []*ocurrence.Occurrence{},
+		Occurrences: []*occurrence.Occurrence{},
 		Children:    []*Node{},
 	}
 }
@@ -30,7 +30,7 @@ func (n *Node) PrintID() {
 	}
 }
 
-func (n *Node) PrintOcurrences() {
+func (n *Node) PrintOccurrences() {
 	for _, oc := range n.Occurrences {
 		str := fmt.Sprintf("ID %d - Cor: %s - Núcleos: %d - Caudas: %d", oc.ID, oc.Color, oc.Nucleus, oc.Tail)
 		fmt.Println(str)
@@ -50,13 +50,13 @@ func (n *Node) RemoveChild(child *Node) {
 	}
 }
 
-func (n *Node) AddOcurrence(oc *ocurrence.Occurrence) {
+func (n *Node) AddOccurrence(oc *occurrence.Occurrence) {
 	n.Occurrences = append(n.Occurrences, oc)
 }
 
-func calcPColor(n *Node) map[string]float64 {
+func calcPColor(n *Node, occurrences []*occurrence.Occurrence) map[string]float64 {
 	countMap := make(map[string]int)
-	for _, oc := range n.Occurrences {
+	for _, oc := range occurrences {
 		_, exists := countMap[oc.Color]
 		if exists {
 			countMap[oc.Color]++
@@ -64,16 +64,16 @@ func calcPColor(n *Node) map[string]float64 {
 			countMap[oc.Color] = 1
 		}
 	}
-	countMap["quantity"] = len(n.Occurrences)
+	countMap["quantity"] = len(occurrences)
 	pColor := CalcHelper(countMap)
 
 	return pColor
 }
 
-func calcPNucleus(n *Node) map[string]float64 {
+func calcPNucleus(n *Node, occurrences []*occurrence.Occurrence) map[string]float64 {
 
 	countMap := make(map[string]int)
-	for _, oc := range n.Occurrences {
+	for _, oc := range occurrences {
 		_, exists := countMap[fmt.Sprint(oc.Nucleus)]
 		if exists {
 			countMap[fmt.Sprint(oc.Nucleus)]++
@@ -82,14 +82,14 @@ func calcPNucleus(n *Node) map[string]float64 {
 		}
 	}
 
-	countMap["quantity"] = len(n.Occurrences)
+	countMap["quantity"] = len(occurrences)
 	pNucleus := CalcHelper(countMap)
 	return pNucleus
 }
 
-func calcPTail(n *Node) map[string]float64 {
+func calcPTail(n *Node, occurrences []*occurrence.Occurrence) map[string]float64 {
 	countMap := make(map[string]int)
-	for _, oc := range n.Occurrences {
+	for _, oc := range occurrences {
 		_, exists := countMap[fmt.Sprint(oc.Tail)]
 		if exists {
 			countMap[fmt.Sprint(oc.Tail)]++
@@ -98,7 +98,7 @@ func calcPTail(n *Node) map[string]float64 {
 		}
 	}
 
-	countMap["quantity"] = len(n.Occurrences)
+	countMap["quantity"] = len(occurrences)
 	pTail := CalcHelper(countMap)
 	return pTail
 }
@@ -113,10 +113,29 @@ func CalcHelper(m map[string]int) map[string]float64 {
 	return result
 }
 
-func (n *Node) CalcP() float64 {
-	pColor := calcPColor(n)
-	pNucleus := calcPNucleus(n)
-	pTail := calcPTail(n)
+func CalcP(n *Node, occurrences []*occurrence.Occurrence) float64 {
+	pColor := calcPColor(n, n.Occurrences)
+	pNucleus := calcPNucleus(n, n.Occurrences)
+	pTail := calcPTail(n, n.Occurrences)
+	var p float64 = 0
+	for _, v := range pColor {
+		p += v
+	}
+	for _, v := range pNucleus {
+		p += v
+	}
+	for _, v := range pTail {
+		p += v
+	}
+	pTotal := CalcPTotal(n, occurrences)
+	n.P = (p - pTotal) * float64(len(n.Occurrences)) / float64(len(occurrences))
+	return n.P
+}
+
+func CalcPTotal(n *Node, ocs []*occurrence.Occurrence) float64 {
+	pColor := calcPColor(n, ocs)
+	pNucleus := calcPNucleus(n, ocs)
+	pTail := calcPTail(n, ocs)
 	var p float64 = 0
 	for _, v := range pColor {
 		p += v
@@ -128,6 +147,21 @@ func (n *Node) CalcP() float64 {
 		p += v
 	}
 
-	n.P = p
+	n.TotalP = p
 	return p
+}
+
+func SumP(n *Node, occurences []*occurrence.Occurrence) float64 {
+	if n == nil {
+		return 0
+	}
+
+	CalcP(n, occurences)
+	sum := n.P
+
+	for _, child := range n.Children {
+		sum += SumP(child, occurences)
+	}
+
+	return sum
 }
