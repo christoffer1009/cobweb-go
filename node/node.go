@@ -32,7 +32,7 @@ func (n *Node) PrintID() {
 
 func (n *Node) PrintOccurrences() {
 	for _, oc := range n.Occurrences {
-		str := fmt.Sprintf("ID %d - Cor: %s - Núcleos: %d - Caudas: %d", oc.ID, oc.Color, oc.Nucleus, oc.Tail)
+		str := fmt.Sprintf("Cor: %s - Núcleos: %d - Caudas: %d", oc.Color, oc.Nucleus, oc.Tail)
 		fmt.Println(str)
 	}
 }
@@ -164,4 +164,25 @@ func SumP(n *Node, occurences []*occurrence.Occurrence) float64 {
 	}
 
 	return sum
+}
+
+func CopyNode(original *Node) *Node {
+	if original == nil {
+		return nil
+	}
+
+	// Cria uma cópia do objeto Node
+	copy := &Node{
+		ID:          original.ID,
+		Occurrences: original.Occurrences,
+		P:           original.P,
+		TotalP:      original.TotalP,
+	}
+
+	// Copia os nós filhos recursivamente
+	for _, child := range original.Children {
+		copy.Children = append(copy.Children, CopyNode(child))
+	}
+
+	return copy
 }

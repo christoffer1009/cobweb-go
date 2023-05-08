@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
+	"os"
+	"strconv"
 
 	"github.com/christoffer1009/cobweb-go/node"
 	"github.com/christoffer1009/cobweb-go/occurrence"
@@ -9,32 +12,48 @@ import (
 )
 
 func main() {
+	// Abrir o arquivo CSV
+	file, err := os.Open("tabela.csv")
+	if err != nil {
+		fmt.Println("Erro ao abrir o arquivo:", err)
+		return
+	}
+
+	defer file.Close()
+
+	// Criar um leitor de CSV
+	reader := csv.NewReader(file)
+
+	// Ler as linhas do arquivo CSV
+	lines, err := reader.ReadAll()
+	if err != nil {
+		fmt.Println("Erro ao ler as linhas do arquivo:", err)
+		return
+	}
+
+	var occurences []*occurrence.Occurrence
+
+	for _, line := range lines {
+
+		nucleus, _ := strconv.Atoi(line[1])
+		tail, _ := strconv.Atoi(line[2])
+
+		occurence := &occurrence.Occurrence{
+			Color:   line[0],
+			Nucleus: nucleus,
+			Tail:    tail,
+		}
+
+		occurences = append(occurences, occurence)
+	}
 
 	root := node.NewNode(0)
-	cobweb := tree.NewTree(root)
+	cobwebtree := tree.NewTree(root)
 
-	child1 := node.NewNode(1)
-	child2 := node.NewNode(2)
+	for _, occ := range occurences {
+		cobwebtree.Cobweb(cobwebtree.Root, occ)
 
-	oc1 := occurrence.NewOcurrence(1, "w", 1, 1)
-	oc2 := occurrence.NewOcurrence(2, "w", 2, 2)
-	oc3 := occurrence.NewOcurrence(3, "b", 2, 2)
-	// oc4 := occurrence.NewOcurrence(4, "b", 3, 1)
-
-	cobweb.Root.AddChild(child1)
-	cobweb.Root.AddChild(child2)
-
-	cobweb.Root.AddOccurrence(oc1)
-	cobweb.Root.AddOccurrence(oc2)
-	cobweb.Root.AddOccurrence(oc3)
-	// cobweb.Root.AddOccurrence(oc4)
-
-	child1.AddOccurrence(oc1)
-	child1.AddOccurrence(oc3)
-	child2.AddOccurrence(oc2)
-
-	root.PrintOccurrences()
-	cobweb.CalcUC(root.Occurrences)
+	}
 
 	fmt.Println("FIM")
 
