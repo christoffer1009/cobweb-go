@@ -24,6 +24,14 @@ func main() {
 	// Criar um leitor de CSV
 	reader := csv.NewReader(file)
 
+  // Ler e descartar a primeira linha
+	_, err = reader.Read()
+	if err != nil {
+		fmt.Println("Erro ao ler a primeira linha:", err)
+		return
+	}
+
+
 	// Ler as linhas do arquivo CSV
 	lines, err := reader.ReadAll()
 	if err != nil {
