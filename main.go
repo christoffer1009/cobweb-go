@@ -24,13 +24,12 @@ func main() {
 	// Criar um leitor de CSV
 	reader := csv.NewReader(file)
 
-  // Ler e descartar a primeira linha
+	// Ler e descartar a primeira linha
 	_, err = reader.Read()
 	if err != nil {
 		fmt.Println("Erro ao ler a primeira linha:", err)
 		return
 	}
-
 
 	// Ler as linhas do arquivo CSV
 	lines, err := reader.ReadAll()
@@ -55,7 +54,7 @@ func main() {
 		occurences = append(occurences, occurence)
 	}
 
-	root := node.NewNode(0)
+	root := node.NewNode("0")
 	cobwebtree := tree.NewTree(root)
 
 	for _, occ := range occurences {

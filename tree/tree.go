@@ -20,13 +20,7 @@ func NewTree(node *node.Node) *Tree {
 	}
 }
 
-func (t *Tree) PrintTree() {
-	if t.Root != nil {
-		t.Root.PrintID()
-	}
-}
-
-func CountNodes(n *node.Node) int {
+func countNodes(n *node.Node) int {
 	if n == nil {
 		return 0
 	}
@@ -34,13 +28,13 @@ func CountNodes(n *node.Node) int {
 	count := 0
 
 	for _, child := range n.Children {
-		count += 1 + CountNodes(child)
+		count += 1 + countNodes(child)
 	}
 	return count
 }
 
-func CalcUC(n *node.Node, occurrences []*occurrence.Occurrence) float64 {
-	nodes_count := CountNodes(n)
+func calcUC(n *node.Node, occurrences []*occurrence.Occurrence) float64 {
+	nodes_count := countNodes(n)
 	var uc float64 = 0
 	if nodes_count > 0 {
 		uc = node.SumP(n, occurrences) / float64(nodes_count)
@@ -53,32 +47,32 @@ func CalcUC(n *node.Node, occurrences []*occurrence.Occurrence) float64 {
 	return uc
 }
 
-func CopyTree(original *Tree) *Tree {
-	// Cria uma cópia do objeto Tree
-	copy := &Tree{
-		// UC:   original.UC,
-		Root: nil,
-	}
+// func copyTree(original *Tree) *Tree {
+// 	// Cria uma cópia do objeto Tree
+// 	copy := &Tree{
+// 		// UC:   original.UC,
+// 		Root: nil,
+// 	}
 
-	// Realiza a cópia profunda do nó root
-	copy.Root = node.CopyNode(original.Root)
+// 	// Realiza a cópia profunda do nó root
+// 	copy.Root = node.CopyNode(original.Root)
 
-	return copy
-}
+// 	return copy
+// }
 
-func (t *Tree) GetChildrenUC(n *node.Node, occ *occurrence.Occurrence) []map[string]interface{} {
+func getChildrenUC(n *node.Node, occ *occurrence.Occurrence) []map[string]interface{} {
 	var childrenUC []map[string]interface{}
 
 	temp := node.CopyNode(n)
 
 	for i := 0; i < len(temp.Children); i++ {
 		temp.Children[i].AddOccurrence(occ)
-		uc := CalcUC(n, t.Root.Occurrences)
+		uc := calcUC(temp, n.Occurrences)
 		item := map[string]interface{}{"index": i, "ID": temp.Children[i].ID, "UC": uc}
 		childrenUC = append(childrenUC, item)
 		temp = node.CopyNode(n)
 
-		fmt.Printf("UC DO FILHO %d: %f\n", temp.Children[i].ID, uc)
+		fmt.Printf("UC DO FILHO %s: %f\n", temp.Children[i].ID, uc)
 	}
 
 	sort.Slice(childrenUC, func(i, j int) bool {
@@ -89,54 +83,57 @@ func (t *Tree) GetChildrenUC(n *node.Node, occ *occurrence.Occurrence) []map[str
 	return childrenUC
 }
 
-func (t *Tree) GetNewChildUC(n *node.Node, occ *occurrence.Occurrence) float64 {
+func getNewChildUC(n *node.Node, occ *occurrence.Occurrence) float64 {
 	temp := node.CopyNode(n)
-  new := node.NewNode(len(n.Children))
+	new := node.NewNode(fmt.Sprintf("%s.%d", n.ID, len(n.Children)))
 	new.AddOccurrence(occ)
 	temp.AddChild(new)
-	newChildUC := CalcUC(n, t.Root.Occurrences)
+	newChildUC := calcUC(n, n.Occurrences)
 	fmt.Printf("UC NOVO NÓ: %f \n", newChildUC)
 	return newChildUC
 }
 
 func (tree *Tree) Cobweb(n *node.Node, occ *occurrence.Occurrence) {
-	tree.Root.AddOccurrence(occ)
 	fmt.Printf("\nOCORRENCIA: %s - %d - %d \n", occ.Color, occ.Nucleus, occ.Tail)
+	n.AddOccurrence(occ)
 
 	if len(n.Children) == 0 {
-    n.AddOccurrence(occ)
-		new := node.NewNode(n.ID + 1)
-		new.AddOccurrence(occ)
-		n.AddChild(new)
-		//tree.CalcUC(tree.Root.Occurrences)
 		fmt.Println("FOLHA")
+		new1 := node.NewNode(fmt.Sprintf("%s.%d", n.ID, len(n.Children)))
+		new1.Occurrences = n.Occurrences
+		n.AddChild(new1)
+		new2 := node.NewNode(fmt.Sprintf("%s.%d", n.ID, len(n.Children)))
+		new2.AddOccurrence(occ)
+		n.AddChild(new2)
 
 	} else {
 
-		childrenUC := tree.GetChildrenUC(n, occ)
-		newChildUC := tree.GetNewChildUC(n, occ)
+		childrenUC := getChildrenUC(n, occ)
+		newChildUC := getNewChildUC(n, occ)
 		bestChildIndex := childrenUC[0]["index"].(int)
 
 		if childrenUC[0]["UC"].(float64) > newChildUC {
-			fmt.Printf("ADICIONA EM MELHOR FILHO %d \n", childrenUC[0]["ID"])
+			fmt.Printf("ADICIONA EM MELHOR FILHO %s \n", childrenUC[0]["ID"])
 			tree.Cobweb(n.Children[bestChildIndex], occ)
-      //n.Children[bestChildIndex].AddOccurrence(occ)
-			//tree.CalcUC(n, tree.Root.Occurrences)
-      
+			//n.Children[bestChildIndex].AddOccurrence(occ)
+			//tree.calcUC(n, tree.Root.Occurrences)
+
 		} else {
-			new := node.NewNode(len(n.Children) + 1)
+			new := node.NewNode(fmt.Sprintf("%s.%d", n.ID, len(n.Children)))
 			new.AddOccurrence(occ)
 			n.AddChild(new)
-			// tree.CalcUC(n, tree.Root.Occurrences)
-			fmt.Printf("CRIAR NOVO NÓ %d \n", new.ID)
+			// tree.calcUC(n, tree.Root.Occurrences)
+			fmt.Printf("CRIAR NOVO NÓ %s \n", new.ID)
 		}
 
 	}
 
-	fmt.Printf("\nNó : %d , FILHOS:\n", n.ID)
-	for _, child := range n.Children {
-		fmt.Printf("ID:%d OCC:%d\n", child.ID, len(child.Occurrences))
-		child.PrintOccurrences()
-	}
+	// node.PrintNodes(n, 1)
+
+	// fmt.Printf("\nNó : %d , FILHOS:\n", n.ID)
+	// for _, child := range n.Children {
+	// 	fmt.Printf("ID:%d OCC:%d\n", child.ID, len(child.Occurrences))
+	// 	child.PrintOccurrences()
+	// }
 
 }

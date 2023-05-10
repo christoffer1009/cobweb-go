@@ -3,19 +3,21 @@ package node
 import (
 	"fmt"
 	"math"
+	"strings"
 
 	"github.com/christoffer1009/cobweb-go/occurrence"
 )
 
 type Node struct {
-	ID          int
+	ID          string
 	Occurrences []*occurrence.Occurrence
+	Parent      *Node
 	Children    []*Node
 	P           float64
 	TotalP      float64
 }
 
-func NewNode(ID int) *Node {
+func NewNode(ID string) *Node {
 	return &Node{
 		ID:          ID,
 		Occurrences: []*occurrence.Occurrence{},
@@ -23,21 +25,18 @@ func NewNode(ID int) *Node {
 	}
 }
 
-func (n *Node) PrintID() {
-	fmt.Println(n.ID)
-	for _, child := range n.Children {
-		child.PrintID()
-	}
-}
+func PrintNodes(node *Node, indent int) {
+	// Imprimir o nó atual com indentação
+	fmt.Printf("%sNode ID: %s\n", strings.Repeat(" ", indent), node.ID)
 
-func (n *Node) PrintOccurrences() {
-	for _, oc := range n.Occurrences {
-		str := fmt.Sprintf("Cor: %s - Núcleos: %d - Caudas: %d", oc.Color, oc.Nucleus, oc.Tail)
-		fmt.Println(str)
+	// Chamar a função recursivamente para cada filho
+	for _, child := range node.Children {
+		PrintNodes(child, indent+2)
 	}
 }
 
 func (n *Node) AddChild(child *Node) {
+	child.Parent = n
 	n.Children = append(n.Children, child)
 }
 
@@ -65,7 +64,7 @@ func calcPColor(n *Node, occurrences []*occurrence.Occurrence) map[string]float6
 		}
 	}
 	countMap["quantity"] = len(occurrences)
-	pColor := CalcHelper(countMap)
+	pColor := calcHelper(countMap)
 
 	return pColor
 }
@@ -83,7 +82,7 @@ func calcPNucleus(n *Node, occurrences []*occurrence.Occurrence) map[string]floa
 	}
 
 	countMap["quantity"] = len(occurrences)
-	pNucleus := CalcHelper(countMap)
+	pNucleus := calcHelper(countMap)
 	return pNucleus
 }
 
@@ -99,11 +98,11 @@ func calcPTail(n *Node, occurrences []*occurrence.Occurrence) map[string]float64
 	}
 
 	countMap["quantity"] = len(occurrences)
-	pTail := CalcHelper(countMap)
+	pTail := calcHelper(countMap)
 	return pTail
 }
 
-func CalcHelper(m map[string]int) map[string]float64 {
+func calcHelper(m map[string]int) map[string]float64 {
 	result := make(map[string]float64)
 	for k, v := range m {
 		if k != "quantity" {
@@ -113,7 +112,7 @@ func CalcHelper(m map[string]int) map[string]float64 {
 	return result
 }
 
-func CalcP(n *Node, occurrences []*occurrence.Occurrence) float64 {
+func calcP(n *Node, occurrences []*occurrence.Occurrence) float64 {
 	pColor := calcPColor(n, n.Occurrences)
 	pNucleus := calcPNucleus(n, n.Occurrences)
 	pTail := calcPTail(n, n.Occurrences)
@@ -127,12 +126,12 @@ func CalcP(n *Node, occurrences []*occurrence.Occurrence) float64 {
 	for _, v := range pTail {
 		p += v
 	}
-	pTotal := CalcPTotal(n, occurrences)
+	pTotal := calcPTotal(n, occurrences)
 	n.P = (p - pTotal) * float64(len(n.Occurrences)) / float64(len(occurrences))
 	return n.P
 }
 
-func CalcPTotal(n *Node, ocs []*occurrence.Occurrence) float64 {
+func calcPTotal(n *Node, ocs []*occurrence.Occurrence) float64 {
 	pColor := calcPColor(n, ocs)
 	pNucleus := calcPNucleus(n, ocs)
 	pTail := calcPTail(n, ocs)
@@ -156,7 +155,7 @@ func SumP(n *Node, occurences []*occurrence.Occurrence) float64 {
 		return 0
 	}
 
-	CalcP(n, occurences)
+	calcP(n, occurences)
 	sum := n.P
 
 	for _, child := range n.Children {
