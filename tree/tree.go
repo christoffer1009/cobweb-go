@@ -115,25 +115,16 @@ func (tree *Tree) Cobweb(n *node.Node, occ *occurrence.Occurrence) {
 		if childrenUC[0]["UC"].(float64) > newChildUC {
 			fmt.Printf("ADICIONA EM MELHOR FILHO %s \n", childrenUC[0]["ID"])
 			tree.Cobweb(n.Children[bestChildIndex], occ)
-			//n.Children[bestChildIndex].AddOccurrence(occ)
-			//tree.calcUC(n, tree.Root.Occurrences)
 
 		} else {
 			new := node.NewNode(fmt.Sprintf("%s.%d", n.ID, len(n.Children)))
 			new.AddOccurrence(occ)
 			n.AddChild(new)
-			// tree.calcUC(n, tree.Root.Occurrences)
 			fmt.Printf("CRIAR NOVO NÓ %s \n", new.ID)
 		}
 
 	}
 
-	// node.PrintNodes(n, 1)
-
-	// fmt.Printf("\nNó : %d , FILHOS:\n", n.ID)
-	// for _, child := range n.Children {
-	// 	fmt.Printf("ID:%d OCC:%d\n", child.ID, len(child.Occurrences))
-	// 	child.PrintOccurrences()
-	// }
+	node.PrintNodes(n, 1)
 
 }

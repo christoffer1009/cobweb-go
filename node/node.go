@@ -174,6 +174,7 @@ func CopyNode(original *Node) *Node {
 	copy := &Node{
 		ID:          original.ID,
 		Occurrences: original.Occurrences,
+		Parent:      original.Parent,
 		P:           original.P,
 		TotalP:      original.TotalP,
 	}
